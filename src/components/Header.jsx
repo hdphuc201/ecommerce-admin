@@ -2,7 +2,7 @@ import React, { useState, useEffect, forwardRef } from 'react';
 import { Col, Row } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { UserOutlined, MenuOutlined, CaretDownOutlined } from '@ant-design/icons';
-import { Dropdown, Space } from 'antd';
+import { Space } from 'antd';
 import { useAppStore } from '~/store/useAppStore';
 import { getUser, removeUser, removeToken } from '~/config/token';
 import Sidebar from './Sidebar';
@@ -13,7 +13,7 @@ const Header = forwardRef(() => {
     const navigate = useNavigate();
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-    const { toggleSidebar, toggleModal } = useAppStore();
+    const { toggleSidebar } = useAppStore();
 
     useEffect(() => {
         const handleResize = () => setWindowWidth(window.innerWidth);
@@ -24,24 +24,15 @@ const Header = forwardRef(() => {
     const handleLogout = () => {
         removeUser();
         removeToken();
-        navigate('/', { replace: true }); 
+        navigate('/', { replace: true });
         toggleSidebar(false);
-        window.location.replace('/'); 
+        window.location.replace('/');
     };
-
-    const items = [
-        {
-            key: '1',
-            label: 'Đăng xuất',
-            onClick: handleLogout,
-        },
-    ].filter(Boolean);
 
     return (
         <>
             <div className="bg-[#15395b] h-[70px]  flex items-center z-30 w-full ">
                 <Row className="w-full container justify-end" style={{ alignItems: 'center' }}>
-
                     <Col span={windowWidth <= 1000 ? 4 : 8} className="flex justify-end items-center">
                         {windowWidth >= 1000 ? (
                             <>
@@ -62,31 +53,23 @@ const Header = forwardRef(() => {
                                             <UserOutlined style={{ fontSize: '30px', color: '#fff' }} />
                                         )}
 
-                                        <div className="account__detail pl-[10px]">
-                                            <Dropdown menu={{ items }} trigger={user ? ['hover'] : []}>
-                                                <button
-                                                    onClick={toggleModal}
-                                                    disabled={user}
-                                                    className="cursor-pointer"
-                                                >
-                                                    <Space className="text-[#fff] text-[17px]">
-                                                        {user ? user?.name : 'Tài khoản'}
-                                                    </Space>
-                                                </button>
-                                            </Dropdown>
-                                        </div>
-                                        <CaretDownOutlined
-                                            style={{ color: '#fff', cursor: 'pointer', padding: '2px 0 0 5px' }}
-                                        />
+                                        <Space className="text-[#fff] text-[17px] pl-5">
+                                            {user ? user?.name : 'Tài khoản'}
+                                        </Space>
+                                        <div className="absolute right-[-10px] top-1/2 -translate-y-1/2 w-[2px] h-[60%] bg-gray-400"></div>
+                                  
                                     </div>
                                 </div>
+                                  <button className=" text-[#fff] text-[17px] pl-10" onClick={handleLogout}>Đăng xuất</button>
                             </>
                         ) : (
                             <button onClick={() => toggleSidebar(true)}>
                                 <MenuOutlined style={{ fontSize: '30px', color: '#fff', cursor: 'pointer' }} />
                             </button>
                         )}
+                        
                     </Col>
+
                     <Sidebar />
                 </Row>
             </div>

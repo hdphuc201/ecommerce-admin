@@ -1,99 +1,131 @@
-import React, { useEffect, useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Card} from 'antd';
-import { Tabs } from 'antd';
+import React, { useState } from 'react';
+import { Card, Table, Select, Tabs, Modal, Button, Divider } from 'antd';
 import { useQuery } from '@tanstack/react-query';
 import { adminService } from '~/services/admin.service';
 
-const DashboardChart = () => {
-    const [monthlyRevenue, setMonthlyRevenue] = useState([]);
-    const [weeklyRevenue, setWeeklyRevenue] = useState([]);
+const { Option } = Select;
+
+const RevenueStatisticsTable = () => {
+    const [year, setYear] = useState(new Date().getFullYear());
+    const [visible, setVisible] = useState(false);
+    const [selectedPeriod, setSelectedPeriod] = useState(null);
+    const [productDetails, setProductDetails] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
 
     const { data: dataMonth } = useQuery({
-        queryKey: ['revenue', 'month', 2025],
-        queryFn: async () => await adminService.getRevenueStatistics('month'),
-        staleTime: 5 * 60 * 1000, 
-        cacheTime: 30 * 60 * 1000, 
-        retry: 0, 
-        refetchOnWindowFocus: false, 
-        refetchOnReconnect: false,
-    });
-    const { data: dataYear } = useQuery({
-        queryKey: ['revenue', 'year', 2025],
-        queryFn: async () => await adminService.getRevenueStatistics('week'),
-        staleTime: 5 * 60 * 1000, 
-        cacheTime: 30 * 60 * 1000, 
-        retry: 0, 
-        refetchOnWindowFocus: false, 
-        refetchOnReconnect: false,
+        queryKey: ['revenue', 'month', year],
+        queryFn: () => adminService.getRevenueStatistics('month', year),
     });
 
-    useEffect(() => {
-        if (dataMonth) {
-            setMonthlyRevenue(dataMonth.data);
-        }
-        if (dataYear) {
-            setWeeklyRevenue(dataYear.data);
-        }
-    }, [dataMonth, dataYear]);
+    const { data: dataWeek } = useQuery({
+        queryKey: ['revenue', 'week', year],
+        queryFn: () => adminService.getRevenueStatistics('week', year),
+    });
 
-    const renderLineChart = (data) => (
-        <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="label" />
-                <YAxis />
-                <Tooltip
-                    formatter={(value, name) => {
-                        if (name === 'totalRevenue') return [`${value.toLocaleString()} ₫`, 'Tổng tiền'];
-                        if (name === 'totalOrders') return [value, 'Số đơn hàng'];
-                        return [value, name];
-                    }}
-                />
-                <Line type="monotone" dataKey="totalRevenue" stroke="#1890ff" strokeWidth={2} />
-                <Line type="monotone" dataKey="totalOrders" stroke="#f56c6c" />
-            </LineChart>
-        </ResponsiveContainer>
-    );
+    const fetchProductDetails = async (period, type) => {
+        const res = await adminService.getProductsInPeriod({ type, label: period.label, year });
+        if (res) {
+            setProductDetails(res.data);
+            setVisible(true);
+            setSelectedPeriod(period);
+        }
+    };
 
-    const renderBarChart = (data) => (
-        <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="label" />
-                <YAxis />
-                <Tooltip
-                    formatter={(value, name) => {
-                        if (name === 'totalRevenue') return [`${value.toLocaleString()} ₫`, 'Tổng tiền'];
-                        if (name === 'totalOrders') return [value, 'Số đơn hàng'];
-                        return [value, name];
-                    }}
-                />
-                <Bar dataKey="totalRevenue" fill="#82ca9d" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="totalOrders" fill="#82ca9d" radius={[6, 6, 0, 0]} />
-            </BarChart>
-        </ResponsiveContainer>
-    );
+    const columns = (type) => [
+        { title: 'Thời gian', dataIndex: 'label', width: 120 },
+        {
+            title: 'Tổng doanh thu',
+            dataIndex: 'totalRevenue',
+            width: 160,
+            render: (val) => `${val.toLocaleString()} ₫`,
+        },
+        { title: 'Tổng đơn hàng', dataIndex: 'totalOrders', width: 140 },
+        {
+            title: 'Chi tiết',
+            dataIndex: 'action',
+            render: (_, record) => <Button onClick={() => fetchProductDetails(record, type)}>Xem sản phẩm</Button>,
+        },
+    ];
+
+    const maxQuantity = Math.max(...productDetails.map((p) => p.quantity));
+
+    const modalColumns = [
+        { title: 'Tên sản phẩm', dataIndex: 'name', key: 'name' },
+        {
+            title: 'Số lượng đã bán',
+            dataIndex: 'quantity',
+            key: 'quantity',
+            render: (quantity) => (
+                <span className={quantity === maxQuantity ? 'text-red-500 font-semibold' : ''}>{quantity}</span>
+            ),
+        },
+    ];
 
     return (
-        <Card title="📊 Thống kê doanh thu" variant={false} style={{ width: '100%', borderRadius: 12 }}>
+        <div className="wrap ml-10 mt-10 mb-20 mx-10">
+            <div className="flex flex-col md:flex-row justify-between">
+                <h1 className="font-bold text-[30px]">Thống kê doanh thu</h1>
+                <Select value={year} onChange={setYear} style={{ width: 120 }}>
+                    {[2023, 2024, 2025].map((y) => (
+                        <Option key={y} value={y}>
+                            {y}
+                        </Option>
+                    ))}
+                </Select>
+            </div>
+
+            <Divider />
+
             <Tabs
                 defaultActiveKey="month"
                 items={[
                     {
                         label: 'Theo tháng',
                         key: 'month',
-                        children: monthlyRevenue.length > 0 ? renderLineChart(monthlyRevenue) : 'Đang tải dữ liệu...',
+                        children: (
+                            <Table
+                                rowKey="label"
+                                scroll={{ x: 600 }}
+                                dataSource={dataMonth?.data || []}
+                                columns={columns('month')}
+                                pagination={false}
+                            />
+                        ),
                     },
                     {
                         label: 'Theo tuần',
                         key: 'week',
-                        children: weeklyRevenue.length > 0 ? renderBarChart(weeklyRevenue) : 'Đang tải dữ liệu...',
+                        children: (
+                            <Table
+                                rowKey="label"
+                                dataSource={dataWeek?.data || []}
+                                columns={columns('week')}
+                                scroll={{ x: 600 }}
+                                pagination={{
+                                    current: currentPage,
+                                    pageSize: 12,
+                                    total: dataWeek?.length,
+                                    onChange: (page) => setCurrentPage(page),
+                                }}
+                            />
+                        ),
                     },
                 ]}
             />
-        </Card>
+
+            <Modal
+                title={`Sản phẩm đã bán - ${selectedPeriod?.label}`}
+                open={visible}
+                onCancel={() => setVisible(false)}
+                footer={null}
+            >
+                <Table rowKey="_id" dataSource={productDetails} columns={modalColumns} pagination={false} />
+                <div className="mt-4 font-semibold text-right">
+                    Tổng số sản phẩm: {productDetails.reduce((sum, p) => sum + p.quantity, 0)}
+                </div>
+            </Modal>
+        </div>
     );
 };
 
-export default DashboardChart;
+export default RevenueStatisticsTable;

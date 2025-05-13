@@ -1,17 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { UploadOutlined } from '@ant-design/icons';
-import { Button, message, Table, Divider, Upload, Modal } from 'antd';
+import { PlusOutlined, SearchOutlined, UploadOutlined } from '@ant-design/icons';
+import { Button, message, Table, Divider, Upload, Modal, Input, Pagination } from 'antd';
 import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
-import { ModalButton } from './component/ModalButton';
 import { ModalForm } from './component/ModalForm';
 import { formatNumber } from '~/utils/formatNumber';
 import { validImageTypes } from '~/utils/typeFile';
 import { adminService } from '~/services/admin.service';
 import TextArea from 'antd/es/input/TextArea';
-import { formattedDate } from '~/utils/formatDate';
-import { toInputDate } from '~/utils/toInputDate';
-import { modalButtonData, tabTableAdminProduct } from '~/constants/dummyData';
+import { resetDataProduct } from '~/constants/dummyData';
+import { ReviewCard } from '~/components/ReviewCard';
 
 const AdminProduct = () => {
     const [state, setState] = useState({
@@ -23,40 +21,19 @@ const AdminProduct = () => {
         removedImages: [],
     });
 
-    const resetDataProduct = {
-        name: '',
-        image: '',
-        categories: '',
-        price_old: '',
-        price: '',
-        countInstock: '',
-        description: '',
-    };
-    const resetDataCategory = {
-        title: '',
-        id: '',
-    };
-    const resetDataDiscount = {
-        code: '',
-        description: '',
-        value: '',
-        minOrderValue: '',
-        usageLimit: '',
-        startDate: '',
-        endDate: '',
-        isActive: true,
-    };
-
+    const [searchValue, setSearchValue] = useState('');
+    const [searchCate, setSearchCate] = useState('');
+    const [isOpenComment, setIsOpenComment] = useState(false);
+    const [idComment, setIdComment] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const productForm = useForm({ mode: 'onChange' });
-    const categoryForm = useForm({ mode: 'onChange' });
-    const discountForm = useForm({ mode: 'onChange' });
 
     const { data: dataProduct, refetch: refetchProduct } = useQuery({
         queryKey: ['products', state.currentPage],
-        queryFn: async () => await adminService.getAllProduct(`?limit=5&page=${state.currentPage}`),
-        staleTime: 5 * 60 * 1000,
-        cacheTime: 30 * 60 * 1000,
+        queryFn: async () =>
+            await adminService.getAllProduct(
+                `?limit=5&page=${state.currentPage}&code=${searchValue}&categories=${searchCate}`,
+            ),
     });
 
     const { data: dataCategory, refetch: refetchCategory } = useQuery({
@@ -66,10 +43,10 @@ const AdminProduct = () => {
         cacheTime: 30 * 60 * 1000,
     });
 
-    const { data: dataDiscount, refetch: refetchDiscount } = useQuery({
-        queryKey: ['discount'],
-        queryFn: async () => await adminService.getAllDiscount(),
-        staleTime: 5 * 60 * 1000,
+    const { data: dataReview, refetch: refetchReview } = useQuery({
+        queryKey: ['reviews'],
+        queryFn: async () => await adminService.getReviews(),
+        staleTime: 5 * 60 * 1000, // Dữ liệu sẽ không bị stale trong 5 phút
         cacheTime: 30 * 60 * 1000,
     });
 
@@ -78,10 +55,20 @@ const AdminProduct = () => {
         () =>
             dataProduct?.data?.map((item) => ({
                 ...item,
-                categories: dataCategory?.find((cate) => cate.id === item.categories)?.title || 'Không xác định',
+                categories: dataCategory?.find((cate) => cate._id === item.categories)?.title || 'Không xác định',
             })),
         [dataProduct, dataCategory],
     );
+
+    const handleSearch = async () => {
+        refetchProduct();
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    };
 
     const showDeleteConfirm = (onOk) => {
         Modal.confirm({
@@ -135,7 +122,7 @@ const AdminProduct = () => {
         setState((prevState) => ({
             ...prevState,
             listImage: updatedFiles,
-            removedImages: removedImages,  // Lưu vào đây để khi submit thì gửi sang BE
+            removedImages: removedImages, // Lưu vào đây để khi submit thì gửi sang BE
         }));
     };
 
@@ -144,7 +131,7 @@ const AdminProduct = () => {
 
         const { action, type } = state.modalConfig;
 
-        const defaultValues = productForm?.formState.defaultValues; 
+        const defaultValues = productForm?.formState.defaultValues;
         const currentValues = productForm?.getValues();
 
         // Kiểm tra sự thay đổi trong form
@@ -210,6 +197,7 @@ const AdminProduct = () => {
                     modalConfig: { open: false, type: '', action: '' },
                     listImage: [],
                 });
+                refetchCategory();
             } else {
                 // Nếu backend return success: false (như "trùng tên", sai định dạng v.v.)
                 message.error(result.message || 'Có lỗi xảy ra');
@@ -220,69 +208,6 @@ const AdminProduct = () => {
             setIsLoading(false);
         }
     };
-
-    const handleSubmitCategory = async (form) => {
-        setIsLoading(true);
-        try {
-            const result = await adminService.createCate(form);
-
-            if (result.success) {
-                message.success(result.message);
-                refetchCategory();
-                categoryForm?.reset(resetDataCategory);
-                setState({
-                    ...state,
-                    modalConfig: { open: false, type: '', action: '' },
-                });
-            }
-        } catch (error) {
-            message.error(error.response?.data?.message || 'Danh mục: Lỗi không xác định');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleSubmitDiscount = async (form) => {
-        setIsLoading(true);
-        const { action, type } = state.modalConfig;
-
-        const defaultValues = discountForm?.formState.defaultValues; // Lấy giá trị ban đầu
-        const currentValues = discountForm?.getValues(); // Lấy giá trị hiện tại
-        const result = JSON.stringify(defaultValues) === JSON.stringify(currentValues);
-
-        if (type === 'discount' && action === 'update' && result) {
-            setIsLoading(false);
-            return message.error('Không có gì thay đổi');
-        }
-        try {
-            const service =
-                type === 'discount' && action === 'update' ? adminService.updateDiscount : adminService.createDiscount;
-            const result = await service(form);
-
-            if (result.success) {
-                message.success(result.message);
-                refetchDiscount();
-                discountForm?.reset(resetDataDiscount);
-                setState({
-                    ...state,
-                    modalConfig: { open: false, type: '', action: '' },
-                });
-            }
-        } catch (error) {
-            console.error(error);
-            message.error(error.response?.data?.message || 'Mã giảm giá: Lỗi không xác định');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleShowTable = useCallback((type) => {
-        setState((prevState) => ({
-            ...prevState,
-            type: type,
-            idCheckbox: [],
-        }));
-    }, []);
 
     const handleCancel = useCallback(() => {
         setState((prevState) => ({
@@ -327,19 +252,6 @@ const AdminProduct = () => {
         });
     };
 
-    const handleClickUpdateDiscount = useCallback(
-        (id) => {
-            const item = dataDiscount?.data?.find((item) => item._id === id);
-
-            setState((prevState) => ({
-                ...prevState,
-                idCheckbox: [item?._id],
-                modalConfig: { open: true, type: 'discount', action: 'update' },
-            }));
-        },
-        [dataDiscount],
-    );
-
     useEffect(() => {
         if (!state.modalConfig.open) return;
 
@@ -348,27 +260,15 @@ const AdminProduct = () => {
 
         const dataMap = {
             product: dataProduct?.data,
-            discount: dataDiscount?.data,
         };
 
         const formMap = {
             product: productForm,
-            discount: discountForm,
         };
 
         let formData = dataMap[type]?.find((item) => item._id === id);
-
-        if (type === 'discount') {
-            const formatted = {
-                ...formData,
-                startDate: toInputDate(formData?.startDate),
-                endDate: toInputDate(formData?.endDate),
-            };
-            formMap[type]?.reset(formatted);
-        } else {
-            formMap[type]?.reset(formData);
-        }
-    }, [state.modalConfig, dataProduct, productForm, dataDiscount, discountForm]);
+        formMap[type]?.reset(formData);
+    }, [state.modalConfig, dataProduct, productForm]);
 
     const renderUpload = () => {
         return (
@@ -392,8 +292,14 @@ const AdminProduct = () => {
             </>
         );
     };
-    const renderAction = (id) => <Button onClick={() => handleClickUpdate(id)}>Update</Button>;
-    const renderActionDiscount = (id) => <Button onClick={() => handleClickUpdateDiscount(id)}>Update</Button>;
+    const renderAction = (id) => {
+        return (
+            <div className="flex gap-3 flex-col">
+                <Button onClick={() => handleClickUpdate(id)}>Update</Button>
+                <Button onClick={() => handleClickComment(id)}>Đánh giá</Button>
+            </div>
+        );
+    };
 
     const renderImage = (images) => {
         return (
@@ -415,10 +321,19 @@ const AdminProduct = () => {
         );
     };
 
+    const handleClickComment = (id) => {
+        setIsOpenComment(true);
+        setIdComment(id);
+    };
+    const hanldeCancelComment = () => {
+        setIsOpenComment(false);
+    };
+
     const renderColumns = {
         product: [
             { title: 'Tên', dataIndex: 'name', width: 150 },
-            { title: 'Hình', dataIndex: 'image', ellipsis: true, width: 200, render: renderImage },
+            { title: 'Hình', dataIndex: 'image', ellipsis: true, width: 150, render: renderImage },
+            { title: 'Mã sản phẩm', dataIndex: 'code', width: 100 },
             { title: 'Danh mục', dataIndex: 'categories', width: 100 },
             {
                 title: 'Giá',
@@ -431,6 +346,7 @@ const AdminProduct = () => {
                 title: 'Tồn kho',
                 dataIndex: 'countInstock',
                 width: 100,
+                render: (value) => value || <p className="text-red-500">Hết hàng</p>,
                 sorter: (a, b) => a.countInstock - b.countInstock,
             },
             {
@@ -438,80 +354,19 @@ const AdminProduct = () => {
                 dataIndex: 'rating',
                 width: 100,
                 sorter: (a, b) => a.rating - b.rating,
-                render: (value) => value.toFixed(1),
+                render: (value) => (!value ? 'Chưa có' : value.toFixed(1)),
             },
             {
                 title: 'Mô tả',
                 dataIndex: 'description',
-                width: 200,
+                width: 150,
                 render: (text) => <TextArea defaultValue={text} rows={4} />,
             },
             {
                 title: 'Action',
                 dataIndex: '_id',
-                width: 200,
-                render: renderAction,
-            },
-        ],
-        category: [
-            { title: 'Tên danh mục', dataIndex: 'title' },
-            { title: 'ID', dataIndex: 'id' },
-        ],
-        discount: [
-            { title: 'Mã khuyến mãi', dataIndex: 'code', width: 150 },
-            { title: 'Mô tả', dataIndex: 'description', width: 150 },
-            {
-                title: 'Loại',
-                dataIndex: 'type',
-                width: 100,
-                render: (type) => (type === 'percent' ? 'Phần trăm' : 'Cố định'),
-            },
-            {
-                title: 'Giá trị giảm',
-                dataIndex: 'value',
                 width: 120,
-                render: (val, record) => (record.type === 'percent' ? `${val}%` : `${formatNumber(val)}₫`),
-            },
-            {
-                title: 'Tối thiểu đơn',
-                dataIndex: 'minOrderValue',
-                width: 150,
-                render: (val) => `${formatNumber(val)}₫`,
-            },
-            { title: 'Giới hạn sử dụng', dataIndex: 'usageLimit', width: 120 },
-            { title: 'Đã sử dụng', dataIndex: 'usedCount', width: 120 },
-            {
-                title: 'Bắt đầu',
-                dataIndex: 'startDate',
-                width: 130,
-                render: (date) => formattedDate(date),
-            },
-            {
-                title: 'Kết thúc',
-                dataIndex: 'endDate',
-                width: 130,
-                render: (date) => formattedDate(date),
-            },
-            {
-                title: 'Kích hoạt',
-                dataIndex: 'isActive',
-                width: 100,
-                render: (val) => (
-                    <span
-                        style={{
-                            color: val ? 'green' : 'red',
-                            fontWeight: 600,
-                        }}
-                    >
-                        {val ? 'Đang dùng' : 'Vô hiệu'}
-                    </span>
-                ),
-            },
-            {
-                title: 'Action',
-                dataIndex: '_id',
-                width: 200,
-                render: renderActionDiscount,
+                render: renderAction,
             },
         ],
     };
@@ -523,7 +378,14 @@ const AdminProduct = () => {
                 modal: [
                     { name: 'name', label: 'Tên sản phẩm', type: 'text', required: true },
                     { name: 'image', label: 'Hình', render: renderUpload(), type: 'photo', required: true },
-                    { name: 'categories', label: 'Danh mục', type: 'select', options: dataCategory, required: true },
+                    {
+                        name: 'categories',
+                        label: 'Danh mục',
+                        type: 'select',
+                        format: 'product',
+                        options: dataCategory,
+                        required: true,
+                    },
                     { name: 'price_old', label: 'Giá cũ', placeholder: 'Vd: 30000', type: 'number', required: true },
                     { name: 'price', label: 'Giá mới', placeholder: 'Vd: 20000', type: 'number', required: true },
                     {
@@ -536,53 +398,8 @@ const AdminProduct = () => {
                     { name: 'description', label: 'Mô tả', type: 'textarea', required: true },
                 ],
             },
-            {
-                type: 'category',
-                modal: [
-                    { name: 'title', label: 'Tên danh mục', required: true },
-                    {
-                        name: 'id',
-                        label: 'ID',
-                        placeholder: 'Random ID danh mục...',
-                        required: true,
-                        button: (
-                            <Button onClick={() => categoryForm.setValue('id', Math.floor(Math.random() * 1000))}>
-                                Random
-                            </Button>
-                        ),
-                    },
-                ],
-            },
-            {
-                type: 'discount',
-                modal: [
-                    { name: 'code', label: 'Mã khuyến mãi', type: 'text', required: true },
-                    { name: 'description', label: 'Mô tả', type: 'textarea', required: true },
-                    {
-                        name: 'type',
-                        label: 'Loại giảm giá',
-                        type: 'select',
-                        options: [
-                            { label: 'Phần trăm (%)', value: 'percent' },
-                            { label: 'Cố định (VND)', value: 'fixed' },
-                        ],
-                        required: true,
-                    },
-                    {
-                        name: 'value',
-                        label: 'Giá trị giảm',
-                        type: 'number',
-                        required: true,
-                    },
-                    { name: 'minOrderValue', label: 'Giá trị đơn hàng tối thiểu', type: 'number' },
-                    { name: 'usageLimit', label: 'Giới hạn sử dụng', type: 'number' },
-                    { name: 'startDate', label: 'Ngày bắt đầu', type: 'date', required: true },
-                    { name: 'endDate', label: 'Ngày kết thúc', type: 'date', required: true },
-                    { name: 'isActive', label: 'Trạng thái', type: 'switch' },
-                ],
-            },
         ],
-        [dataCategory],
+        [dataProduct, dataCategory],
     );
 
     const [modalArray, setModalArray] = useState([]);
@@ -602,8 +419,6 @@ const AdminProduct = () => {
 
         const titleMap = {
             product: type === 'product' && action === 'update' ? 'Cập nhật sản phẩm' : 'Tạo sản phẩm',
-            category: 'Tạo danh mục',
-            discount: type === 'discount' && action === 'update' ? 'Cập nhật mã giảm giá' : 'Tạo mã giảm giá',
         };
         setTitleModal(titleMap[type] || '');
     }, [state.modalConfig.type, state.modalConfig.action, state.listImage]);
@@ -612,28 +427,10 @@ const AdminProduct = () => {
         product: {
             submit: handleSubmitProduct,
             methods: productForm,
-            dataSource: dataTableProduct,
-            totalPaginate: dataProduct?.total,
+            dataSource: dataTableProduct || [],
+            totalPaginate: dataProduct?.total || 0,
             service: adminService?.deleteProduct,
             reset: resetDataProduct,
-            modal: modalArray,
-        },
-        category: {
-            submit: handleSubmitCategory,
-            methods: categoryForm,
-            dataSource: dataCategory,
-            totalPaginate: dataCategory?.length || 0,
-            service: adminService?.deleteCate,
-            reset: resetDataCategory,
-            modal: modalArray,
-        },
-        discount: {
-            submit: handleSubmitDiscount,
-            methods: discountForm,
-            dataSource: dataDiscount?.data,
-            totalPaginate: dataCategory?.data?.length,
-            service: adminService?.deleteDiscount,
-            reset: resetDataDiscount,
             modal: modalArray,
         },
     };
@@ -650,9 +447,8 @@ const AdminProduct = () => {
             if (result.success) {
                 message.success(result.message);
                 setState((prevState) => ({ ...prevState, idCheckbox: [] }));
-                state.type === 'product' && refetchProduct();
-                state.type === 'category' && refetchCategory();
-                state.type === 'discount' && refetchDiscount();
+                refetchProduct();
+                refetchCategory();
             }
         } catch (error) {
             message.error(error.response?.data?.message || 'Lỗi');
@@ -660,19 +456,48 @@ const AdminProduct = () => {
     }, [query, renderType]);
 
     return (
-        <div className="wrap ml-10 mt-10 w-[90%]">
-            <div className="flex gap-10">
-                {modalButtonData.map((item, i) => (
-                    <ModalButton
-                        key={i}
-                        title={item.title}
-                        onClick={() =>
-                            setState({ ...state, modalConfig: { open: true, type: item.type, action: item.action } })
-                        }
-                    />
-                ))}
+        <div className="wrap ml-10 mt-10 mx-10">
+            <div className="flex justify-between flex-col md:flex-row">
+                <h1 className="font-bold text-[30px]">Quản lí sản phẩm</h1>
+                <Button
+                    onClick={() =>
+                        setState({ ...state, modalConfig: { open: true, type: 'product', action: 'create' } })
+                    }
+                >
+                    <PlusOutlined /> Thêm sản phẩm
+                </Button>
             </div>
             <Divider />
+
+            <div className="search">
+                <div className="flex flex-col md:flex-row justify-end gap-3 mb-10 md:mb-0">
+                    <select
+                        className="w-full md:w-[20%] p-2 border border-gray-300 rounded-md"
+                        defaultValue=""
+                        onChange={(e) => setSearchCate(e.target.value)}
+                    >
+                        <option value="" disabled>
+                            Chọn danh mục
+                        </option>
+                        {dataCategory?.map((item, i) => (
+                            <option key={i} value={item._id}>
+                                {item.title}
+                            </option>
+                        ))}
+                    </select>
+                    <Input
+                        type="text"
+                        placeholder="Mã sản phẩm"
+                        value={searchValue || ''}
+                        onChange={(e) => setSearchValue(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className="w-full md:w-[20%]"
+                    />
+                    <Button onClick={handleSearch}>
+                        <SearchOutlined /> Tìm kiếm
+                    </Button>
+                </div>
+            </div>
             <Button
                 disabled={!state.idCheckbox?.length}
                 onClick={() => showDeleteConfirm(() => handleDelete())}
@@ -681,13 +506,6 @@ const AdminProduct = () => {
                 Xóa
             </Button>
 
-            <div className="  mb-5 md:flex md:flex-row sm:flex-col gap-5 ">
-                {tabTableAdminProduct?.map((item, i) => (
-                    <div className="mt-3" key={i}>
-                        <Button onClick={() => handleShowTable(item.value)}>{item.title || ''}</Button>
-                    </div>
-                ))}
-            </div>
             <Table
                 rowKey="_id"
                 rowClassName={() => 'align-top'}
@@ -709,7 +527,6 @@ const AdminProduct = () => {
                 }}
             />
             <ModalForm
-                // key={state.modalConfig.open ? 'open' : 'closed'} // này fix khi bấm vào click update product sẽ reset item => nhưng nó không mượt nếu sử dụng nó
                 title={titleModal || ''}
                 isOpen={state.modalConfig.open}
                 onCancel={handleCancel}
@@ -718,6 +535,26 @@ const AdminProduct = () => {
                 isLoading={isLoading}
                 fields={modalArray}
             />
+
+            <Modal title="Đánh giá" open={isOpenComment} onCancel={hanldeCancelComment} footer={null}>
+                {dataReview?.filter((review) => review.productId === idComment).length > 0 ? (
+                    <div className="">
+                        {dataReview
+                            ?.filter((review) => review.productId === idComment)[0]
+                            ?.reviews?.map((item, index) => (
+                                <div key={item._id}>
+                                    <ReviewCard itemReview={item} />
+                                    {index <
+                                        dataReview?.filter((review) => review.productId === idComment)[0]?.reviews
+                                            ?.length -
+                                            1 && <div className="border-solid border-b-2 border-[#f0f0f0]"></div>}
+                                </div>
+                            ))}
+                    </div>
+                ) : (
+                    <p>Không có đánh giá</p>
+                )}
+            </Modal>
         </div>
     );
 };

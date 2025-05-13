@@ -2,6 +2,7 @@ import { Button, Col, Modal, Rate, Row, Switch, Input, Alert } from 'antd';
 import { Controller, FormProvider } from 'react-hook-form';
 import InputForm from '~/components/InputForm';
 import { FIELD_REQUIRED_MESSAGE } from '~/utils/validator';
+import { useRenderCate } from './../../../hooks/useRenderCate';
 const { TextArea } = Input;
 export const ModalForm = ({ title, isOpen, onCancel, methods, onSubmit, fields, isLoading, action }) => {
     return (
@@ -10,7 +11,7 @@ export const ModalForm = ({ title, isOpen, onCancel, methods, onSubmit, fields, 
                 <form onSubmit={methods?.handleSubmit(onSubmit)}>
                     <Row gutter={[18, 18]}>
                         {fields.map((field, i) => (
-                            <Col sm={24} xs={24} md={12} key={i}>
+                            <Col sm={24} xs={24} md={fields.length === 1 ? 24 : 12} key={i}>
                                 <label className="block text-gray-700 mb-1">{field.label}</label>
                                 <div className="relative">
                                     {['date', 'text', 'password', 'number', undefined].includes(field.type) && (
@@ -39,14 +40,18 @@ export const ModalForm = ({ title, isOpen, onCancel, methods, onSubmit, fields, 
                                                         className="resize-none"
                                                     />
                                                     {fieldState.error && (
-                                                        <Alert showIcon  style={{ margin: '5px 0'}} message={fieldState.error.message} type="error" />
+                                                        <Alert
+                                                            showIcon
+                                                            style={{ margin: '5px 0' }}
+                                                            message={fieldState.error.message}
+                                                            type="error"
+                                                        />
                                                     )}
-                                                    
                                                 </>
                                             )}
                                         />
                                     )}
-                                    {field.type === 'select' && (
+                                    {field.type === 'select'&& field.format === "category"  &&  (
                                         <>
                                             <select
                                                 {...methods?.register(field.name, {
@@ -60,13 +65,44 @@ export const ModalForm = ({ title, isOpen, onCancel, methods, onSubmit, fields, 
                                                     Chọn một giá trị
                                                 </option>
                                                 {field.options?.map((item, i) => (
-                                                    <option key={i} value={item.id || item.value}>
+                                                    <option key={i} value={item.id || item?.value}>
                                                         {item.title || item.label}
                                                     </option>
                                                 ))}
                                             </select>
                                             {methods?.formState.errors[field.name]?.message && (
-                                                <Alert showIcon  style={{ margin: '5px 0'}} message={methods?.formState.errors[field.name]?.message} type="error" />
+                                                <Alert
+                                                    showIcon
+                                                    style={{ margin: '5px 0' }}
+                                                    message={methods?.formState.errors[field.name]?.message}
+                                                    type="error"
+                                                />
+                                            )}
+                                        </>
+                                    )}
+
+                                    {field.type === 'select' && field.format === "product" && (
+                                        <>
+                                            <select
+                                                {...methods?.register(field.name, {
+                                                    required: field.required && FIELD_REQUIRED_MESSAGE,
+                                                })}
+                                                className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+                                                defaultValue=""
+                                                disabled={field.name === 'id'}
+                                            >
+                                                <option value="" disabled>
+                                                    Chọn một giá trị
+                                                </option>
+                                                {useRenderCate(field.options)}
+                                            </select>
+                                            {methods?.formState.errors[field.name]?.message && (
+                                                <Alert
+                                                    showIcon
+                                                    style={{ margin: '5px 0' }}
+                                                    message={methods?.formState.errors[field.name]?.message}
+                                                    type="error"
+                                                />
                                             )}
                                         </>
                                     )}

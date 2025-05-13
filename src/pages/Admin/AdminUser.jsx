@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { UserOutlined, UploadOutlined } from '@ant-design/icons';
-import { Avatar, Button, message, Pagination, Upload, Table, Modal, Divider } from 'antd';
+import { UserOutlined, UploadOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { Avatar, Button, message, Pagination, Upload, Table, Modal, Divider, Input } from 'antd';
 import { ModalButton } from './component/ModalButton';
 import { useForm } from 'react-hook-form';
 import { ModalForm } from './component/ModalForm';
@@ -9,6 +9,7 @@ import { adminService } from '~/services/admin.service';
 import { formattedDate } from '~/utils/formatDate';
 import { formatNumber } from '~/utils/formatNumber';
 import { getUser } from '~/config/token';
+import { selectAccountActive, selectAccountBuy, selectAccountVerify } from '~/constants/dummyData';
 
 const fetchOrder = async (id, page = 1) => await adminService.getOrder(`?limit=4&page=${page}&id=${id}`);
 
@@ -31,16 +32,29 @@ const AdminUser = () => {
         phone: '',
     };
 
+    const [accountActive, setAccountAcitve] = useState('');
+    const [accountBuy, setAccountBuy] = useState('');
+    const [accountVerify, setAccountVerify] = useState('');
+
     // lấy danh sách người dùng
     const { data: dataUser, refetch } = useQuery({
         queryKey: ['user'],
-        queryFn: async () => await adminService.getAllUser(),
+        queryFn: async () =>
+            await adminService.getAllUser(
+                `?isActive=${accountActive ? accountActive : ''}&orderCount=${accountBuy ? accountBuy : ''}&isLogin=${
+                    accountVerify ? accountVerify : ''
+                }`,
+            ),
         refetchOnWindowFocus: false, // Tắt refetch khi tab focus lại
         refetchOnReconnect: false, // Tắt refetch khi mạng có lại
         staleTime: 5 * 60 * 1000, // Dữ liệu sẽ không bị stale trong 5 phút
         cacheTime: 30 * 60 * 1000, // Dữ liệu sẽ bị xóa khỏi cache sau 30 phút
     });
-console.log("dataUser", dataUser)
+
+    const handleSearch = async () => {
+        refetch();
+    };
+
     const handleCancel = () => {
         setModalConfig({ open: false, type: '' });
         setImageUrl('');
@@ -157,11 +171,11 @@ console.log("dataUser", dataUser)
 
     // Fetch dữ liệu đơn hàng với useQuery
     const { data: orders, isLoading } = useQuery({
-        queryKey: ['orders', currentOrderId, currentPageOrder], 
-        queryFn: () => fetchOrder(currentOrderId, currentPageOrder), 
-        enabled: !!currentOrderId, 
-        staleTime: 5 * 60 * 1000, 
-        cacheTime: 30 * 60 * 1000, 
+        queryKey: ['orders', currentOrderId, currentPageOrder],
+        queryFn: () => fetchOrder(currentOrderId, currentPageOrder),
+        enabled: !!currentOrderId,
+        staleTime: 5 * 60 * 1000,
+        cacheTime: 30 * 60 * 1000,
         onSuccess: () => {
             setModalOrder(true); // Mở modal khi dữ liệu đã được load thành công
         },
@@ -250,7 +264,8 @@ console.log("dataUser", dataUser)
                 title: 'Quyền admin',
                 dataIndex: 'isAdmin',
                 width: 100,
-                render: (a) => (a ? 'true' : 'false'),
+                render: (a) =>
+                    a ? <p className="text-[#20a32b]">{'true'}</p> : <p className="text-[#929191]">{'false'}</p>,
             },
             {
                 title: 'Hoạt động',
@@ -284,12 +299,63 @@ console.log("dataUser", dataUser)
     };
 
     return (
-        <div className="wrap ml-10 mt-10 w-[90%]">
-            <ModalButton
-                title="Quản lý người dùng"
-                onClick={() => setModalConfig({ open: true, type: 'user', action: 'create' })}
-            />
+        <div className="wrap ml-10 mt-10 mx-10">
+            <div className="flex justify-between flex-col md:flex-row">
+                <h1 className="font-bold text-[30px]">Quản lí người dùng</h1>
+                <Button onClick={() => setModalConfig({ open: true, type: 'user', action: 'create' })}>
+                    <PlusOutlined /> Tạo người dùng
+                </Button>
+            </div>
             <Divider />
+            <div className="search">
+                <div className="flex flex-col  md:flex-row justify-end gap-3 mb-10 md:mb-0">
+                    <select
+                        className="w-full md:w-[10%] p-2 border border-gray-300 rounded-md"
+                        defaultValue=""
+                        onChange={(e) => setAccountAcitve(e.target.value)}
+                    >
+                        <option value="" disabled>
+                            Trạng thái
+                        </option>
+                        {selectAccountActive?.map((item, i) => (
+                            <option key={i} value={item.value}>
+                                {item.title}
+                            </option>
+                        ))}
+                    </select>
+                    <select
+                        className="w-full md:w-[10%] p-2 border border-gray-300 rounded-md"
+                        defaultValue=""
+                        onChange={(e) => setAccountVerify(e.target.value)}
+                    >
+                        <option value="" disabled>
+                            Xác thực
+                        </option>
+                        {selectAccountVerify?.map((item, i) => (
+                            <option key={i} value={item.value}>
+                                {item.title}
+                            </option>
+                        ))}
+                    </select>
+                    <select
+                        className="w-full md:w-[15%] p-2 border border-gray-300 rounded-md"
+                        defaultValue=""
+                        onChange={(e) => setAccountBuy(e.target.value)}
+                    >
+                        <option value="" disabled>
+                            Sắp xếp theo đơn hàng
+                        </option>
+                        {selectAccountBuy?.map((item, i) => (
+                            <option key={i} value={item.value}>
+                                {item.title}
+                            </option>
+                        ))}
+                    </select>
+                    <Button onClick={handleSearch}>
+                        <SearchOutlined /> Tìm kiếm
+                    </Button>
+                </div>
+            </div>
             <Button
                 disabled={!idCheckbox?.length}
                 onClick={() => showDeleteConfirm(() => handleDelete())}

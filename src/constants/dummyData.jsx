@@ -62,20 +62,84 @@ export const tabTableAdminProduct = [
     },
 ];
 
-export const modalButtonData = [
+export const resetDataProduct = {
+    name: '',
+    image: '',
+    categories: '',
+    price_old: '',
+    price: '',
+    countInstock: '',
+    description: '',
+};
+export const resetDataDiscount = {
+    code: '',
+    description: '',
+    value: '',
+    minOrderValue: '',
+    usageLimit: '',
+    startDate: '',
+    endDate: '',
+    isActive: true,
+};
+
+export const resetDataCategory = {
+    title: '',
+};
+
+export const resetDataCategoryChildrent = {
+    title: '',
+    parentId: '',
+};
+
+export const selectAccountActive = [
     {
-        title: 'Quản lí sản phẩm',
-        type: 'product',
-        action: 'create',
+        id: 1,
+        title: 'Tất cả',
+        value: 'all',
     },
     {
-        title: 'Danh mục sản phẩm',
-        type: 'category',
-        action: '',
+        id: 2,
+        title: 'Hoạt động',
+        value: true,
     },
     {
-        title: 'Khuyến mãi',
-        type: 'discount',
-        action: 'create',
+        id: 3,
+        title: 'Không hoạt động',
+        value: false,
+    },
+];
+
+export const selectAccountVerify = [
+    {
+        id: 1,
+        title: 'Tất cả',
+        value: 'all',
+    },
+    {
+        id: 2,
+        title: 'Xác thực',
+        value: true,
+    },
+    {
+        id: 3,
+        title: 'Chưa xác thực',
+        value: false,
+    },
+];
+export const selectAccountBuy = [
+    {
+        id: 1,
+        title: 'Tất cả',
+        value: 'all',
+    },
+    {
+        id: 2,
+        title: 'Nhiều nhất',
+        value: 'max',
+    },
+    {
+        id: 3,
+        title: 'Ít nhất',
+        value: 'min',
     },
 ];
