@@ -11,7 +11,7 @@ import { formatNumber } from '~/utils/formatNumber';
 import { getUser } from '~/config/token';
 import { selectAccountActive, selectAccountBuy, selectAccountVerify } from '~/constants/dummyData';
 
-const fetchOrder = async (id, page = 1) => await adminService.getOrder(`?limit=4&page=${page}&id=${id}`);
+const fetchOrder = async (id, page = 1) => await adminService.getOrderAdmin(`?limit=4&page=${page}&id=${id}`);
 
 const AdminUser = () => {
     const [currentPage, setCurrentPage] = useState(1);
@@ -199,7 +199,7 @@ const AdminUser = () => {
     const renderOrder = (id) => {
         const userAdmin = dataUser?.find((item) => item._id === id);
         if (!userAdmin?.isAdmin) {
-            return <Button onClick={() => handleViewOrders(id)}>View Orders</Button>;
+            return <Button onClick={() => handleViewOrders(id)}>Xem</Button>;
         }
         return null;
     };
@@ -240,11 +240,7 @@ const AdminUser = () => {
     };
 
     const renderAction = (id) => {
-        const userAdmin = dataUser?.find((item) => item._id === id);
-        if (!userAdmin.isAdmin) {
-            return <Button onClick={() => onClickUpdate(id)}>Update</Button>;
-        }
-        return null;
+        return <Button onClick={() => onClickUpdate(id)}>Cập nhật</Button>;
     };
 
     const columns = {
@@ -259,13 +255,6 @@ const AdminUser = () => {
                 title: 'Tên tài khoản',
                 dataIndex: 'name',
                 width: 100,
-            },
-            {
-                title: 'Quyền admin',
-                dataIndex: 'isAdmin',
-                width: 100,
-                render: (a) =>
-                    a ? <p className="text-[#20a32b]">{'true'}</p> : <p className="text-[#929191]">{'false'}</p>,
             },
             {
                 title: 'Hoạt động',
@@ -421,7 +410,7 @@ const AdminUser = () => {
                     ) : (
                         orders?.data?.map((item, index) => (
                             <div key={index} className={`border border-solid p-2.5 border-[#c6c6c6] rounded-[10px]`}>
-                                <p>
+                                <p className='flex justify-between'>
                                     <strong>Ngày đặt:</strong> {formattedDate(item?.createdAt)}
                                 </p>
                                 <p>
@@ -435,6 +424,11 @@ const AdminUser = () => {
                                 </p>
                                 <p>
                                     <strong>Tổng tiền:</strong> {formatNumber(item?.totalPrice || 0)}₫
+                                </p>
+                                <p className='flex gap-2'>
+                                    Trạng thái: {item?.status === 'cancelled' && <p className='text-red-500'>Đã hủy</p>}
+                                    {item?.status === 'pending' && <p className='text-yellow-500'>Đang chờ</p>}
+                                    {item?.status === 'fullfilled' && <p className='text-green-500'>Đã giao hàng</p>}
                                 </p>
                                 <p className="mt-3">
                                     <strong>Sản phẩm:</strong>

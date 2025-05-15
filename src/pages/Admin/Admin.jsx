@@ -1,6 +1,14 @@
 import { Col, Menu, Row } from 'antd';
 import React, { useState } from 'react';
-import { AppstoreOutlined, CodeSandboxOutlined, LineChartOutlined, ProductOutlined, QrcodeOutlined, UserOutlined } from '@ant-design/icons';
+import {
+    AppstoreOutlined,
+    CodeSandboxOutlined,
+    LineChartOutlined,
+    OrderedListOutlined,
+    ProductOutlined,
+    QrcodeOutlined,
+    UserOutlined,
+} from '@ant-design/icons';
 import AdminUser from './AdminUser';
 import AdminProduct from './AdminProduct';
 import DashboardChart from './DashboardChart';
@@ -10,6 +18,7 @@ import { Navigate } from 'react-router-dom';
 import { getUser } from '~/config/token';
 import AdminCate from './AdminCate';
 import AdminDiscount from './AdminDiscount';
+import AdminOrder from './AdminOrder';
 
 const Admin = () => {
     const [renderComponent, setRenderComponent] = useState('user');
@@ -38,15 +47,23 @@ const Admin = () => {
             icon: <AppstoreOutlined />,
             component: <AdminCate />,
         },
-         {
+        {
             id: 4,
+            key: 'order',
+            label: 'Đơn hàng',
+            icon: <OrderedListOutlined />,
+            component: <AdminOrder />,
+        },
+        {
+            id: 5,
             key: 'discount',
             label: 'Mã khuyến mãi',
             icon: <CodeSandboxOutlined />,
             component: <AdminDiscount />,
         },
+
         {
-            id: 5,
+            id: 6,
             key: 'chart',
             label: 'Doanh thu',
             icon: <LineChartOutlined />,

@@ -41,9 +41,9 @@ const RevenueStatisticsTable = () => {
         },
         { title: 'Tổng đơn hàng', dataIndex: 'totalOrders', width: 140 },
         {
-            title: 'Chi tiết',
+            title: 'Chi tiết sản phẩm',
             dataIndex: 'action',
-            render: (_, record) => <Button onClick={() => fetchProductDetails(record, type)}>Xem sản phẩm</Button>,
+            render: (_, record) => <Button onClick={() => fetchProductDetails(record, type)}>Xem</Button>,
         },
     ];
 

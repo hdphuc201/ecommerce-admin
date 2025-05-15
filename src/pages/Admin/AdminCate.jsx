@@ -105,7 +105,7 @@ const AdminCate = () => {
         }
     }, [state.modalConfig]);
 
-    const renderAction = (id) => <Button onClick={() => handleClickViewProduct(id)}>View product</Button>;
+    const renderAction = (id) => <Button onClick={() => handleClickViewProduct(id)}>Xem</Button>;
     const renderColumns = [
         {
             title: 'Tên danh mục',
@@ -142,7 +142,7 @@ const AdminCate = () => {
             render: (count) => count || 0,
         },
         {
-            title: 'Danh sách',
+            title: 'Danh sách sản phẩm',
             dataIndex: '_id',
             key: '_id',
             render: renderAction,

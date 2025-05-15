@@ -60,7 +60,7 @@ const AdminProduct = () => {
         [dataProduct, dataCategory],
     );
 
-    const handleSearch = async () => {
+    const handleSearch = () => {
         refetchProduct();
     };
 
@@ -295,7 +295,7 @@ const AdminProduct = () => {
     const renderAction = (id) => {
         return (
             <div className="flex gap-3 flex-col">
-                <Button onClick={() => handleClickUpdate(id)}>Update</Button>
+                <Button onClick={() => handleClickUpdate(id)}>Cập nhật</Button>
                 <Button onClick={() => handleClickComment(id)}>Đánh giá</Button>
             </div>
         );

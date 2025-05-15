@@ -38,7 +38,8 @@ export const adminService = {
     updateDiscount: (form) => api.put('/discount/updateDiscount', form),
 
     // order
-    getOrder: (query) => api.get(`/order/getOrderAdmin${query ? query : ''}`),
+    getOrderAdmin: (query) => api.get(`/order/getOrderAdmin${query ? query : ''}`),
+    cancelOrder: (ids) => api.delete(`/order/cancelOrder?ids=${ids}`),
 
     // review 
     getReviews: () => api.get(`/reviews/get`),

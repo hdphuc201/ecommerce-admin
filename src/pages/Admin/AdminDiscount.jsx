@@ -137,7 +137,7 @@ const AdminDiscount = () => {
     }, [state.modalConfig, dataDiscount, discountForm]);
 
    
-    const renderActionDiscount = (id) => <Button onClick={() => handleClickUpdateDiscount(id)}>Update</Button>;
+    const renderActionDiscount = (id) => <Button onClick={() => handleClickUpdateDiscount(id)}>Cập nhật</Button>;
 
     const renderColumns = {
         discount: [
