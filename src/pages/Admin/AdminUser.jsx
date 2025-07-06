@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { UserOutlined, UploadOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { Avatar, Button, message, Pagination, Upload, Table, Modal, Divider, Input } from 'antd';
-import { ModalButton } from './component/ModalButton';
 import { useForm } from 'react-hook-form';
 import { ModalForm } from './component/ModalForm';
 import { useQuery } from '@tanstack/react-query';
@@ -48,7 +47,7 @@ const AdminUser = () => {
         refetchOnWindowFocus: false, // Tắt refetch khi tab focus lại
         refetchOnReconnect: false, // Tắt refetch khi mạng có lại
         staleTime: 5 * 60 * 1000, // Dữ liệu sẽ không bị stale trong 5 phút
-        cacheTime: 30 * 60 * 1000, // Dữ liệu sẽ bị xóa khỏi cache sau 30 phút
+        gcTime: 30 * 60 * 1000, // Dữ liệu sẽ bị xóa khỏi cache sau 30 phút
     });
 
     const handleSearch = async () => {
@@ -175,7 +174,7 @@ const AdminUser = () => {
         queryFn: () => fetchOrder(currentOrderId, currentPageOrder),
         enabled: !!currentOrderId,
         staleTime: 5 * 60 * 1000,
-        cacheTime: 30 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
         onSuccess: () => {
             setModalOrder(true); // Mở modal khi dữ liệu đã được load thành công
         },
@@ -296,7 +295,7 @@ const AdminUser = () => {
                 </Button>
             </div>
             <Divider />
-            <div className="search">
+            <div className="search mb-10" >
                 <div className="flex flex-col  md:flex-row justify-end gap-3 mb-10 md:mb-0">
                     <select
                         className="w-full md:w-[10%] p-2 border border-gray-300 rounded-md"
@@ -345,20 +344,20 @@ const AdminUser = () => {
                     </Button>
                 </div>
             </div>
-            <Button
+            {/* <Button
                 disabled={!idCheckbox?.length}
                 onClick={() => showDeleteConfirm(() => handleDelete())}
                 style={{ marginBottom: '10px' }}
             >
                 Xóa
-            </Button>
+            </Button> */}
 
             <Table
                 rowKey="_id"
-                rowSelection={{
-                    idCheckbox,
-                    onChange: setIdCheckbox,
-                }}
+                // rowSelection={{
+                //     idCheckbox,
+                //     onChange: setIdCheckbox,
+                // }}
                 columns={columns['user']}
                 dataSource={dataUser || []}
                 scroll={{ x: 800 }}

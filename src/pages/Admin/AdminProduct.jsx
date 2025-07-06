@@ -40,14 +40,14 @@ const AdminProduct = () => {
         queryKey: ['category'],
         queryFn: async () => await adminService.getCate(),
         staleTime: 5 * 60 * 1000, // Dữ liệu sẽ không bị stale trong 5 phút
-        cacheTime: 30 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
     });
 
     const { data: dataReview, refetch: refetchReview } = useQuery({
         queryKey: ['reviews'],
         queryFn: async () => await adminService.getReviews(),
         staleTime: 5 * 60 * 1000, // Dữ liệu sẽ không bị stale trong 5 phút
-        cacheTime: 30 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
     });
 
     // set lại dataSource và chỉnh lại categories từ dạng id thành title

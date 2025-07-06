@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import { Button, message, Table, Divider, Modal, Tag, Pagination, Input } from 'antd';
 import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
@@ -25,14 +25,14 @@ const AdminCate = () => {
         queryKey: ['category'],
         queryFn: async () => await adminService.getCate(),
         staleTime: 5 * 60 * 1000, // Dữ liệu sẽ không bị stale trong 5 phút
-        cacheTime: 30 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
     });
 
     const { data: dataProduct } = useQuery({
         queryKey: ['products', state.currentPage, idViewProduct, currentPage],
         queryFn: async () => await adminService.getAllProduct(`?limit=3&page=${currentPage}${idViewProduct ? `&categories=${idViewProduct}` : ''}`),
         staleTime: 5 * 60 * 1000, // Dữ liệu sẽ không bị stale trong 5 phút
-        cacheTime: 30 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
     });
 
     const showDeleteConfirm = (onOk) => {

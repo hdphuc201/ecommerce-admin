@@ -1,15 +1,9 @@
 import { adminService } from '~/services/admin.service';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { PlusOutlined, SearchOutlined, UploadOutlined } from '@ant-design/icons';
-import { Button, message, Table, Divider, Upload, Modal, Input, Pagination } from 'antd';
-import { useForm } from 'react-hook-form';
+import React, { useState } from 'react';
+import { SearchOutlined } from '@ant-design/icons';
+import { Button, message, Table, Divider, Modal, Input } from 'antd';
 import { useQuery } from '@tanstack/react-query';
-import { ModalForm } from './component/ModalForm';
 import { formatNumber } from '~/utils/formatNumber';
-import { validImageTypes } from '~/utils/typeFile';
-import TextArea from 'antd/es/input/TextArea';
-import { resetDataProduct } from '~/constants/dummyData';
-import { ReviewCard } from '~/components/ReviewCard';
 
 const AdminOrder = () => {
     const [visible, setVisible] = useState(false);
@@ -30,13 +24,13 @@ const AdminOrder = () => {
         queryKey: ['order'],
         queryFn: async () => await adminService.getOrderAdmin(`?status=${status || ''}&code=${code || ''}`),
         staleTime: 5 * 60 * 1000,
-        cacheTime: 30 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
     });
     const { data: dataUser, refetch: refetchUser } = useQuery({
         queryKey: ['user'],
         queryFn: async () => await adminService.getAllUser(),
         staleTime: 5 * 60 * 1000,
-        cacheTime: 30 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
     });
 
     const handleSearch = () => {

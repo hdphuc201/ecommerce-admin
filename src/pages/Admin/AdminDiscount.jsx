@@ -25,7 +25,7 @@ const AdminDiscount = () => {
         queryKey: ['discount'],
         queryFn: async () => await adminService.getAllDiscount(),
         staleTime: 5 * 60 * 1000,
-        cacheTime: 30 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
     });
 
     const showDeleteConfirm = (onOk) => {
