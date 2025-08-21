@@ -10,6 +10,12 @@ import { adminService } from '~/services/admin.service';
 import TextArea from 'antd/es/input/TextArea';
 import { resetDataProduct } from '~/constants/dummyData';
 import { ReviewCard } from '~/components/ReviewCard';
+import { getToken, getUser } from '~/config/token';
+import axios from 'axios';
+import { mockData } from './../../../../backend/src/mockData';
+import MockDataTool from '~/components/MockDataTool';
+import { toast } from 'react-toastify';
+import { toastError, toastInfo } from '~/utils/toast';
 
 const AdminProduct = () => {
     const [state, setState] = useState({
@@ -59,6 +65,46 @@ const AdminProduct = () => {
             })),
         [dataProduct, dataCategory],
     );
+
+    // (async () => {
+    //    const res = await  adminService.createMultipleProduct(mockData)
+    //     console.log("✅ Done:", res.data);
+    // })();
+
+    const token = getToken();
+    const handleUploadDataMultiple = async () => {
+        const CHUNK_SIZE = 10;
+
+        // Hàm chia mảng thành từng nhóm nhỏ
+        const chunkArray = (arr, size) => {
+            const result = [];
+            for (let i = 0; i < arr.length; i += size) {
+                result.push(arr.slice(i, i + size));
+            }
+            return result;
+        };
+
+        const chunks = chunkArray(mockData, CHUNK_SIZE);
+
+        for (let i = 0; i < chunks.length; i++) {
+            try {
+                toastInfo(`⬆️ Đang upload lô ${i + 1}/${chunks.length} (${chunks[i].length} sản phẩm)`);
+                const res = await axios.post('http://localhost:8017/api/product/bulk-crawl', chunks[i], {
+                    headers: {
+                        Authorization: `Bearer ${token.access_token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                if (res.success) {
+                    toastInfo(`✅ Đã upload lô ${i + 1}:`, res.message);
+                }
+            } catch (error) {
+                console.log('error', error);
+                toastError(error.response.data.message || error.response?.data);
+                break;
+            }
+        }
+    };
 
     const handleSearch = () => {
         refetchProduct();
@@ -363,6 +409,11 @@ const AdminProduct = () => {
                 render: (text) => <TextArea defaultValue={text} rows={4} />,
             },
             {
+                title: 'Mã sản phẩm',
+                dataIndex: 'code',
+                width: 150,
+            },
+            {
                 title: 'Action',
                 dataIndex: '_id',
                 width: 120,
@@ -396,6 +447,7 @@ const AdminProduct = () => {
                         pattern: { message: 'Nhập số' },
                     },
                     { name: 'description', label: 'Mô tả', type: 'textarea', required: true },
+                    { name: 'code', label: 'Mã SP', type: 'number', required: true },
                 ],
             },
         ],
@@ -457,6 +509,7 @@ const AdminProduct = () => {
 
     return (
         <div className="wrap ml-10 mt-10 mx-10">
+            <MockDataTool />
             <div className="flex justify-between flex-col md:flex-row">
                 <h1 className="font-bold text-[30px]">Quản lí sản phẩm</h1>
                 <Button
@@ -465,6 +518,9 @@ const AdminProduct = () => {
                     }
                 >
                     <PlusOutlined /> Thêm sản phẩm
+                </Button>
+                <Button onClick={handleUploadDataMultiple}>
+                    <PlusOutlined /> Đăng hàng loạt
                 </Button>
             </div>
             <Divider />

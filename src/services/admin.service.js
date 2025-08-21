@@ -25,6 +25,11 @@ export const adminService = {
     getAllProduct: (query) => api.get(`/product/getAllProduct${query ? query : ''}`),
     deleteProduct: (ids) => api.delete(`/product/delete-product?${ids}`),
     createProduct: (form, config = {}) => api.post(`/product/create-product`, form, config),
+    createMultipleProduct: (products) => api.post(`/product/bulk-crawl`, products),
+    createMockdata: (url, categoryId) => {
+        console.log('url, categoryId', url, categoryId)
+        api.post(`/product/crawl-mockdata`, url, categoryId)
+    },
     updateProduct: (form, config = {}) => api.put(`/product/update-product`, form, config),
 
     // chart

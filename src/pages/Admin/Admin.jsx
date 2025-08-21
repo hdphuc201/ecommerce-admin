@@ -21,7 +21,7 @@ import AdminDiscount from './AdminDiscount';
 import AdminOrder from './AdminOrder';
 
 const Admin = () => {
-    const [renderComponent, setRenderComponent] = useState('user');
+    const [renderComponent, setRenderComponent] = useState('product');
 
     const user = getUser();
 
